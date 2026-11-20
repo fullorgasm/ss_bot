@@ -471,6 +471,16 @@
   <!-- ==================== IN-PAGE TOAST ==================== -->
   <div id="appToast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden max-w-md w-[90%] px-4 py-3 rounded-2xl bg-emerald-950/95 border border-emerald-400/40 text-xs font-semibold text-emerald-100 shadow-2xl text-center"></div>
 
+  <!-- ==================== FLOATING CART BAR ==================== -->
+  <div id="floatingCartBar" class="fixed bottom-16 inset-x-0 z-40 hidden px-3">
+    <div class="max-w-2xl mx-auto">
+      <button id="btnOpenFloatingCart" type="button" class="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-extrabold text-xs shadow-2xl shadow-emerald-950/70 flex items-center justify-between gap-2 hover:brightness-110 transition">
+        <span id="floatingCartText">🛒 В корзине: 0 поз.</span>
+        <span class="px-2.5 py-1 rounded-xl bg-slate-950/15 font-extrabold">Открыть →</span>
+      </button>
+    </div>
+  </div>
+
   <!-- ==================== STICKY BOTTOM TAB BAR ==================== -->
   <nav class="nav-bar fixed bottom-0 inset-x-0 z-40 px-2 py-2">
     <div class="max-w-2xl mx-auto grid grid-cols-5 gap-1">
@@ -1363,8 +1373,21 @@
     }
 
     function updateCartBadge() {
+      const n = cartState.items.length;
       const el = document.getElementById('headerCartCount');
-      if (el) el.textContent = String(cartState.items.length);
+      if (el) el.textContent = String(n);
+      const bar = document.getElementById('floatingCartBar');
+      const txt = document.getElementById('floatingCartText');
+      if (bar && txt) {
+        if (n > 0) {
+          const mushG = cartState.items.reduce(function (a, it) { return a + (Number(it.weightG) || 50); }, 0);
+          const stars = cartState.items.reduce(function (a, it) { return a + (Number(it.priceStars) || 500); }, 0);
+          txt.textContent = '🛒 Корзина: ' + n + ' поз. • ' + mushG + ' г (+50 г упак.) • ' + stars + ' ⭐';
+          bar.classList.remove('hidden');
+        } else {
+          bar.classList.add('hidden');
+        }
+      }
     }
 
     function addPackToCart(spKey) {
@@ -1406,7 +1429,7 @@
       haptic('medium');
       const ap = state.activeProtocol;
       const title = ap.mode === 'mono'
-        ? (ap.calc.course.shortTitle + ' (' + ap.calc.spName + ')')
+        ? ((ap.calc.course.shortTitle || ap.calc.course.title.slice(0, 38)) + ' (' + ap.calc.spName + ')')
         : ('Симбиоз: ' + ap.calc.sym.title.slice(0, 40));
       cartState.items.push({
         uid: 'pr_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
@@ -1421,7 +1444,7 @@
       saveCartState();
       updateCartBadge();
       closeProtocolSheet();
-      showToast('🛒 Добавлено в корзину (+50 г). Можете выбрать ещё товары или открыть корзину!');
+      showToast('🛒 Добавлено в корзину Mini App (+50 г)! Нажмите на полоску корзины внизу или 🛒 вверху справа.');
     }
 
     function removeCartItem(uid) {
@@ -1546,6 +1569,7 @@
     }
 
     document.getElementById('headerCartBtn').addEventListener('click', openCartSheet);
+    document.getElementById('btnOpenFloatingCart').addEventListener('click', openCartSheet);
     document.getElementById('closeCartSheetBtn').addEventListener('click', closeCartSheet);
     document.getElementById('btnCartContinue').addEventListener('click', closeCartSheet);
     document.getElementById('cartSheet').addEventListener('click', function (ev) {
